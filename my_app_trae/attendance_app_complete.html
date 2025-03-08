@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>考勤签到 - Android点名签到应用</title>
+    <style>
+        :root {
+            /* 主色调 */
+            --primary: #4285F4;
+            --primary-dark: #3367D6;
+            --primary-light: #8AB4F8;
+
+            /* 辅助色调 */
+            --success: #0F9D58;
+            --warning: #F4B400;
+            --danger: #DB4437;
+            --info: #4285F4;
+
+            /* 背景色 */
+            --bg-light: #FFFFFF;
+            --bg-gray: #F5F5F5;
+            --bg-card: #FFFFFF;
+            --bg-card-hover: #F8F9FA;
+
+            /* 文本颜色 */
+            --text-primary: #202124;
+            --text-secondary: #5F6368;
+            --text-tertiary: #80868B;
+            --text-disabled: #BDC1C6;
+
+            /* 边框与阴影 */
+            --border-light: #DADCE0;
+            --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-elevated: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+            /* 间距 */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* 圆角 */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-gray);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            padding: var(--space-md);
+        }
+
+        .app-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-xl);
+            justify-content: center;
+            padding-bottom: var(--space-xl);
+        }
+
+        .screen {
+            width: 360px;
+            height: 720px;
+            background: var(--bg-light);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--shadow-elevated);
+            border: 1px solid var(--border-light);
+        }
+
+        .header {
+            padding: var(--space-md) var(--space-md);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 10;
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .header-action {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .icon-button {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .icon-button:hover,
+        .icon-button:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .content {
+            height: calc(100% - 160px);
+            overflow-y: auto;
+            padding: 0 var(--space-md) var(--space-md);
+        }
+
+        .full-content {
+            height: calc(100% - 80px);
+            overflow-y: auto;
+            padding: 0 var(--space-md) var(--space-md);
+        }
+
+        .nav-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: var(--bg-light);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid var(--border-light);
+            padding: 0 var(--space-md);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: var(--space-xs);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            border: 1px solid var(--border-light);
+            transition: all 0.2s ease;
+        }
+
+        .card:active {
+            transform: scale(0.98);
+            background: var(--bg-card-hover);
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-md) var(--space-lg);
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .button.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .button.primary:hover,
+        .button.primary:active {
+            background: var(--primary-dark);
+        }
+
+        .button.outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .button.outline:hover,
+        .button.outline:active {
+            background: rgba(66, 133, 244, 0.1);
+        }
+
+        .button.full {
+            width: 100%;
+        }
+
+        .button-icon {
+            margin-right: var(--space-sm);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin: var(--space-lg) 0 var(--space-md);
+            display: flex;
+            align-items: center;
+            color: var(--text-primary);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            object-fit: cover;
+            background-color: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: var(--bg-gray);
+            border-radius: var(--radius-full);
+            padding: var(--space-sm) var(--space-md);
+            margin: var(--space-md) 0;
+        }
+
+        .search-icon {
+            color: var(--text-tertiary);
+            margin-right: var(--space-sm);
+        }
+
+        .search-input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .search-input:focus {
+            outline: none;
+        }
+
+        .form-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--space-sm);
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: var(--space-md);
+            background: var(--bg-light);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* 签到列表样式 */
+        .attendance-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-md);
+            margin-top: var(--space-md);
+        }
+
+        .attendance-item {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            text-align: center;
+            border: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .attendance-item:active {
+            transform: scale(0.95);
+        }
+
+        .attendance-item.checked-in {
+            background-color: rgba(15, 157, 88, 0.1);
+            border-color: var(--success);
+        }
+
+        .attendance-name {
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: var(--space-sm);
+        }
+
+        .attendance-status {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: var(--space-xs);
+        }
+
+        .attendance-item.checked-in .attendance-status {
+            color: var(--success);
+        }
+
+        /* 日历视图样式 */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+
+        .calendar-title {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: var(--space-lg);
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 500;
+            font-size: 12px;
+            padding: var(--space-xs);
+            color: var(--text-secondary);
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+
+        .calendar-day.today {
+            background-color: var(--primary-light);
+            color: white;
+        }
+
+        .calendar-day.has-record {
+            border: 2px solid var(--success);
+        }
+
+        .calendar-day.selected {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* 月度统计表格样式 */
+        .monthly-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: var(--space-md);
+            font-size: 14px;
+        }
+
+        .monthly-table th,
+        .monthly-table td {
+            padding: var(--space-sm);
+            text-align: center;
+            border: 1px solid var(--border-light);
+        }
+
+        .monthly-table th {
+            background-color: var(--bg-gray);
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+        }
+
+        .monthly-table td.present {
+            background-color: rgba(15, 157, 88, 0.1);
+            color: var(--success);
+        }
+
+        .monthly-table td.absent {
+            background-color: rgba(219, 68, 55, 0.1);
+            color: var(--danger);
+        }
+
+        /* 登录表单样式 */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+            padding: var(--space-xl);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: var(--space-xl);
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: var(--space-md);
+            text-align: center;
+            color: var(--primary);
+        }
+
+        .login-form {
+            margin-bottom: var(--space-xl);
+        }
+
+        .login-footer {
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+
+        /* 导出功能样式 */
+        .export-options {
+            display: flex;
+            gap: var(--space-md);
+            margin-top: var(--space-md);
+        }
+
+        .export-option {
+            flex: 1;
+            text-align: center;
+            padding: var(--space-md);
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+            cursor: pointer;
+        }
+
+        .export-option:active {
+            background: var(--bg-card-hover);
+        }
+
+        .export-icon {
+            font-size: 24px;
+            margin-bottom: var(--space-sm);
+            color: var(--primary);
+        }
+
+        .export-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- 登录界面 -->
+        <div class="screen">
+            <div class="header">
+                <div class="header-title">考勤签到系统</div>
+                <div class="header-action">
+                    <button class="icon-button">&#8942;</button>
+                </div>
+            </div>
+            <div class="full-content">
+                <div class="login-container">
+                    <div class="login-logo">
+                        <div class="avatar" style="width: 80px; height: 80px; margin: 0 auto; font-size: 36px;">考勤</div>
+                    </div>
+                    <h1 class="login-title">欢迎使用考勤签到系统</h1>
+                    <div class="login-form">
+                        <div class="form-group">
+                            <label class="form-label">用户名</label>
+                            <input type="text" class="form-input" placeholder="请输入用户名">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">密码</label>
+                            <input type="password" class="form-input" placeholder="请输入密码">
+                        </div>
+                        <div class="form-group">
+                            <button class="button primary full">登录</button>
+                        </div>
+                    </div>
+                    <div class="login-footer">
+                        <p>© 2023 考勤签到系统 版权所有</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作员签到界面（页面A） -->
+        <div class="screen">
+            <div class="header">
+                <div class="header-title">今日签到</div>
+                <div class="header-action">
+                    <button class="icon-button">&#8635;</button>
+                    <button class="icon-button">&#8942;</button>
+                </div>
+            </div>
+            <div class="content">
+                <div class="search-bar">
+                    <span class="search-icon">&#128269;</span>
+                    <input type="text" class="search-input" placeholder="搜索姓名...">
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 500;">今日签到情况</div>
+                            <div style="font-size: 14px; color: var(--text-tertiary);">2023年10月15日 星期日</div>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <div style="margin-right: var(--space-md); text-align: center;">
+                                <div style="font-size: 20px; font-weight: 500; color: var(--success);">15</div>
+                                <div style="font-size: 12px; color: var(--text-tertiary);">已签到</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 20px; font-weight: 500; color: var(--danger);">5</div>
+                                <div style="font-size: 12px; color: var(--text-tertiary);">未签到</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">点击姓名进行签到</div>
+
+                <div class="attendance-list">
+                    <!-- 已签到人员 -->
+                    <div class="attendance-item checked-in">
+                        <div class="avatar">张</div>
+                        <div class="attendance-name">张三</div>
+                        <div class="attendance-status">已签到 08:30</div>
+                    </div>
+                    <div class="attendance-item checked-in">
+                        <div class="avatar">李</div>
+                        <div class="attendance-name">李四</div>
+                        <div class="attendance-status">已签到 08:45</div>
+                    </div>
+                    <div class="attendance-item checked-in">
+                        <div class="avatar">王</div>
+                        <div class="attendance-name">王五</div>
+                        <div class="attendance-status">已签到 08:50</div>
+                    </div>
+
+                    <!-- 未签到人员 -->
+                    <div class="attendance-item">
+                        <div class="avatar">赵</div>
+                        <div class="attendance-name">赵六</div>
+                        <div class="attendance-status">未签到</div>
+                    </div>
+                    <div class="attendance-item">
+                        <div class="avatar">钱</div>
+                        <div class="attendance-name">钱七</div>
+                        <div class="attendance-status">未签到</div>
+                    </div>
+                    <div class="attendance-item">
+                        <div class="avatar">孙</div>
+                        <div class="attendance-name">孙八</div>
+                        <div class="attendance-status">未签到</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-bar">
+                <a href="#" class="nav-item active">
+                    <div class="nav-icon">&#128197;</div>
+                    <div>签到</div>
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">&#128202;</div>
+                    <div>统计</div>
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">&#128100;</div>
+                    <div>我的</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 管理员月度统计界面（页面B） -->
+        <div class="screen">
+            <div class="header">
+                <div class="header-title">月度考勤统计</div>
+                <div class="header-action">
+                    <button class="icon-button">&#128229;</button>
+                    <button class="icon-button">&#8942;</button>
+                </div>
+            </div>
+            <div class="content">
+                <div class="calendar-header">
+                    <div class="calendar-title">2023年10月</div>
+                    <div class="calendar-nav">
+                        <button class="icon-button" style="background-color: var(--bg-gray); color: var(--text-primary);">&#9664;</button>
+                        <button class="icon-button" style="background-color: var(--bg-gray); color: var(--text-primary);">&#9654;</button>
+                    </div>
+                </div>
+
+                <div class="calendar-grid">
+                    <!-- 星期标题 -->
+                    <div class="calendar-day-header">日</div>
+                    <div class="calendar-day-header">一</div>
+                    <div class="calendar-day-header">二</div>
+                    <div class="calendar-day-header">三</div>
+                    <div class="calendar-day-header">四</div>
+                    <div class="calendar-day-header">五</div>
+                    <div class="calendar-day-header">六</div>
+
+                    <!-- 日期格子 -->
+                    <div class="calendar-day">1</div>
+                    <div class="calendar-day has-record">2</div>
+                    <div class="calendar-day has-record">3</div>
+                    <div class="calendar-day has-record">4</div>
+                    <div class="calendar-day has-record">5</div>
+                    <div class="calendar-day has-record">6</div>
+                    <div class="calendar-day">7</div>
+                    <div class="calendar-day">8</div>
+                    <div class="calendar-day has-record">9</div>
+                    <div class="calendar-day has-record">10</div>
+                    <div class="calendar-day has-record">11</div>
+                    <div class="calendar-day has-record">12</div>
+                    <div class="calendar-day has-record">13</div>
+                    <div class="calendar-day">14</div>
+                    <div class="calendar-day today selected">15</div>
+                    <div class="calendar-day">16</div>
+                    <div class="calendar-day">17</div>
+                    <div class="calendar-day">18</div>
+                    <div class="calendar-day">19</div>
+                    <div class="calendar-day">20</div>
+                    <div class="calendar-day">21</div>
+                    <div class="calendar-day">22</div>
+                    <div class="calendar-day">23</div>
+                    <div class="calendar-day">24</div>
+                    <div class="calendar-day">25</div>
+                    <div class="calendar-day">26</div>
+                    <div class="calendar-day">27</div>
+                    <div class="calendar-day">28</div>
+                    <div class="calendar-day">29</div>
+                    <div class="calendar-day">30</div>
+                    <div class="calendar-day">31</div>
+                </div>
+
+                <div class="section-title">10月15日考勤详情</div>
+
+                <div style="overflow-x: auto;">
+                    <table class="monthly-table">
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>签到时间</th>
+                                <th>状态</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>张三</td>
+                                <td>08:30</td>
+                                <td class="present">正常</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>李四</td>
+                                <td>08:45</td>
+                                <td class="present">正常</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>王五</td>
+                                <td>08:50</td>
+                                <td class="present">正常</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>赵六</td>
+                                <td>-</td>
+                                <td class="absent">未签到</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>钱七</td>
+                                <td>-</td>
+                                <td class="absent">未签到</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section-title">数据导出</div>
+                <div class="export-options">
+                    <div class="export-option">
+                        <div class="export-icon">&#128196;</div>
+                        <div class="export-label">导出Excel</div>
+                    </div>
+                    <div class="export-option">
+                        <div class="export-icon">&#128233;</div>
+                        <div class="export-label">分享</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-bar">
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">&#128197;</div>
+                    <div>签到</div>
+                </a>
+                <a href="#" class="nav-item active">
+                    <div class="nav-icon">&#128202;</div>
+                    <div>统计</div>
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">&#128100;</div>
+                    <div>我的</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 月度签到表格界面 -->
+        <div class="screen">
+            <div class="header">
+                <div class="header-title">月度签到表</div>
+                <div class="header-action">
+                    <button class="icon-button">&#128229;</button>
+                    <button class="icon-button">&#8942;</button>
+                </div>
+            </div>
+            <div class="content">
+                <div class="calendar-header">
+                    <div class="calendar-title">2023年10月</div>
+                    <div class="calendar-nav">
+                        <button class="icon-button" style="background-color: var(--bg-gray); color: var(--text-primary);">&#9664;</button>
+                        <button class="icon-button" style="background-color: var(--bg-gray); color: var(--text-primary);">&#9654;</button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="monthly-table">
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>1</th>
+                                <th>2</th>
+                                <th>3</th>
+                                <th>4</th>
+                                <th>5</th>
+                                <th>6</th>
+                                <th>7</th>
+                                <th>8</th>
+                                <th>9</th>
+                                <th>10</th>
+                                <th>11</th>
+                                <th>12</th>
+                                <th>13</th>
+                                <th>14</th>
+                                <th>15</th>
+                                <th>出勤率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>张三</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td>-</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td>100%</td>
+                            </tr>
+                            <tr>
+                                <td>李四</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="absent">✗</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td>-</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td>93%</td>
+                            </tr>
+                            <tr>
+                                <td>王五</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td>-</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td>100%</td>
+                            </tr>
+                            <tr>
+                                <td>赵六</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="absent">✗</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td>-</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="absent">✗</td>
+                                <td>86%</td>
+                            </tr>
+                            <tr>
+                                <td>钱七</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td>-</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="present">√</td>
+                                <td class="absent">✗</td>
+                                <td>93%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section-title">数据导出</div>
+                <div class="export-options">
+                    <div class="export-option">
+                        <div class="export-icon">&#128196;</div>
+                        <div class="export-label">导出Excel</div>
+                    </div>
+                    <div class="export-option">
+                        <div class="export-icon">&#128233;</div>
+                        <div class="export-label">分享</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-bar">
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">&#128197;</div>
+                    <div>签到</div>
+                </a>
+                <a href="#" class="nav-item active">
+                    <div class="nav-icon">&#128202;</div>
+                    <div>统计</div>
+                </a>
+                <a href="#" class="nav-item">
+                    <div class="nav-icon">&#128100;</div>
+                    <div>我的</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的交互功能演示
+        document.addEventListener('DOMContentLoaded', function() {
+            // 签到功能
+            const attendanceItems = document.querySelectorAll('.attendance-item:not(.checked-in)');
+            attendanceItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    this.classList.add('checked-in');
+                    const statusEl = this.querySelector('.attendance-status');
+                    const now = new Date();
+                    const hours = now.getHours().toString().padStart(2, '0');
+                    const minutes = now.getMinutes().toString().padStart(2, '0');
+                    statusEl.textContent = `已签到 ${hours}:${minutes}`;
+                });
+            });
+
+            // 日历日期选择
+            const calendarDays = document.querySelectorAll('.calendar-day');
+            calendarDays.forEach(day => {
+                day.addEventListener('click', function() {
+                    calendarDays.forEach(d => d.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+
+            // 导出功能模拟
+            const exportOptions = document.querySelectorAll('.export-option');
+            exportOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    alert('导出功能模拟：数据已准备好，即将导出或分享');
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
