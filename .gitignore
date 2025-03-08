@@ -9,3 +9,13 @@ wheels/
 # Virtual environments
 .venv
 python-sdk
+
+# 忽略所有文件
+*
+*.*
+
+# 不忽略指定的文件
+!android_attendance_app_prompt.md
+!example.html
+!my_app_cursor.html
+!.gitignore
